@@ -17,7 +17,7 @@ http.createServer((req, res) => {
   let url = decodeURIComponent((req.url || '/').split('?')[0]);
   if (url.endsWith('/')) url += 'index.html';
   const file = path.normalize(path.join(ROOT, url));
-  if (!file.startsWith(ROOT) || /[\\/](tools|node_modules)[\\/]|server\.js$|package\.json$/.test(file.slice(ROOT.length))) {
+  if (!file.startsWith(ROOT) || /[\\/](tools|node_modules|fonte)[\\/]|server\.js$|package\.json$/.test(file.slice(ROOT.length))) {
     res.writeHead(404); return res.end('Não encontrado');
   }
   fs.readFile(file, (err, data) => {

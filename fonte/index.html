@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>CLAYSP — Portfólio</title>
+  <meta name="description" content="CLAYSP — web design, 3D e experiências digitais feitas sob medida.">
+  <meta name="theme-color" content="#000000">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="intro-active">
+
+  <!-- ===================== ABERTURA ===================== -->
+  <div id="intro" role="presentation">
+    <div class="intro-stage">
+      <p class="intro-text" id="intro-hello" data-text="Seja bem-vindo :)" aria-hidden="true"></p>
+      <p class="intro-text is-small" id="intro-by" data-text="Criado por" aria-hidden="true"></p>
+
+      <div class="brand" id="brand" aria-label="CLAYSP">
+        <div class="brand-halo"></div>
+        <img class="brand-symbol" alt="" data-asset="symbol">
+        <div class="brand-letter" data-l="C"><img alt="" data-asset="C"><span class="sheen"><i></i></span></div>
+        <div class="brand-letter" data-l="L"><img alt="" data-asset="L"><span class="sheen"><i></i></span></div>
+        <div class="brand-letter" data-l="A"><img alt="" data-asset="A"><span class="sheen"><i></i></span></div>
+        <div class="brand-letter" data-l="Y"><img alt="" data-asset="Y"><span class="sheen"><i></i></span></div>
+        <div class="brand-letter" data-l="S"><img alt="" data-asset="S"><span class="sheen"><i></i></span></div>
+        <div class="brand-letter" data-l="P"><img alt="" data-asset="P"><span class="sheen"><i></i></span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===================== CABEÇALHO ===================== -->
+  <header class="site-header">
+    <button class="mark" id="menu-open" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="menu">
+      <img alt="" data-asset="symbol">
+      <span>CLAYSP</span>
+      <i class="mark-hint" aria-hidden="true">Menu</i>
+    </button>
+    <nav>
+      <a href="#projetos">Projetos</a>
+      <a href="#sobre">Sobre</a>
+      <a href="#contato">Contato</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ===================== HERO ===================== -->
+    <!-- A seção é alta para dar espaço ao scroll: a mão desce, agarra a Terra e sobe com ela. -->
+    <section class="hero" id="topo">
+      <div class="hero-sticky">
+        <canvas id="hero-canvas" aria-label="Um braço robótico preto desce do alto em direção à Terra"></canvas>
+        <div class="hero-fallback"><img alt="" data-asset="symbol"></div>
+        <div class="hero-grain" aria-hidden="true"></div>
+
+        <div class="hero-bottom">
+          <div class="hero-copy" id="hero-copy">
+            <div class="eyebrow fade-up">Portfólio · Web design &amp; 3D</div>
+            <h1 class="hero-title reveal" data-reveal>Experiências web <em>fora deste mundo.</em></h1>
+            <p class="hero-sub fade-up">Sites sob medida, com design, movimento e 3D que fazem a sua marca ser lembrada.</p>
+          </div>
+          <button class="orbit-btn fade-up" id="see-globe" type="button" aria-label="Ver globo: aproximar a câmera da Terra">
+            <svg viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+              <defs>
+                <linearGradient id="ob-glow" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0" stop-color="#fff" stop-opacity="0"/>
+                  <stop offset=".7" stop-color="#fff" stop-opacity=".85"/>
+                  <stop offset="1" stop-color="#fff" stop-opacity="1"/>
+                </linearGradient>
+              </defs>
+              <circle class="ob-inner" cx="100" cy="100" r="72"/>
+              <g class="ob-ring"><circle class="ob-track" cx="100" cy="100" r="92"/></g>
+              <g class="ob-ring is-fast"><circle class="ob-arc" cx="100" cy="100" r="92"/></g>
+            </svg>
+            <span class="ob-label">Ver<br>globo</span>
+          </button>
+        </div>
+
+        <p class="hero-caption" id="hero-caption" data-text="O mundo inteiro, na palma da mão." aria-hidden="true"></p>
+        <div class="scroll-cue" id="scroll-cue">Role</div>
+      </div>
+    </section>
+
+    <!-- ===================== PROJETOS ===================== -->
+    <!-- Para adicionar um projeto: copie um bloco <a class="project">, troque o título, as tags, o link
+         e coloque a imagem em assets/projetos/ (ex.: style="background-image:url(assets/projetos/meu-site.jpg)"). -->
+    <section class="section" id="projetos">
+      <div class="section-head">
+        <div>
+          <span class="index">01 — PROJETOS</span>
+          <h2>Trabalhos selecionados</h2>
+        </div>
+        <p>Cada site é pensado como uma experiência: identidade, movimento e detalhe.</p>
+      </div>
+      <div class="projects">
+        <a class="project" href="#" target="_blank" rel="noopener">
+          <div class="thumb placeholder"></div>
+          <span class="num">01</span>
+          <div><h3>Seu projeto aqui</h3><div class="tags">Site · Identidade · 2026</div></div>
+        </a>
+        <a class="project" href="#" target="_blank" rel="noopener">
+          <div class="thumb placeholder"></div>
+          <span class="num">02</span>
+          <div><h3>Seu projeto aqui</h3><div class="tags">Landing page · Animação</div></div>
+        </a>
+        <a class="project" href="#" target="_blank" rel="noopener">
+          <div class="thumb placeholder"></div>
+          <span class="num">03</span>
+          <div><h3>Seu projeto aqui</h3><div class="tags">E-commerce · 3D</div></div>
+        </a>
+      </div>
+    </section>
+
+    <!-- ===================== SOBRE ===================== -->
+    <section class="section" id="sobre">
+      <div class="about">
+        <div>
+          <span class="index">02 — SOBRE</span>
+          <h2>Design que se sente <em>antes</em> de ser lido.</h2>
+        </div>
+        <div>
+          <p>Sou a CLAYSP. Crio sites que unem estética de luxo, movimento cinematográfico e tecnologia — do primeiro esboço ao site no ar.</p>
+          <p>Cada projeto é feito sob medida, com atenção a cada transição, cada reflexo e cada segundo da experiência de quem visita.</p>
+          <div class="skills"><span>Web design</span><span>3D interativo</span><span>Animação</span><span>Identidade visual</span><span>Landing pages</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== CONTATO ===================== -->
+    <section class="section contact" id="contato">
+      <span class="index">03 — CONTATO</span>
+      <h2>Vamos criar algo <em>inesquecível?</em></h2>
+      <!-- Troque 55XXXXXXXXXXX pelo seu número com DDI e DDD, só números -->
+      <a class="btn is-solid" href="https://wa.me/55XXXXXXXXXXX" target="_blank" rel="noopener">Chamar no WhatsApp</a>
+      <a class="btn" href="mailto:seuemail@exemplo.com">Enviar e-mail</a>
+    </section>
+  </main>
+
+  <!-- ===================== MENU (camada global) ===================== -->
+  <div class="menu" id="menu" role="dialog" aria-modal="true" aria-label="Menu de navegação" tabindex="-1" hidden>
+    <nav class="menu-nav" aria-label="Seções do site">
+      <i class="menu-dot" aria-hidden="true"></i>
+      <a class="menu-item is-home" href="#topo" data-go="#topo" data-section="topo"><span class="mi-mask"><span class="mi-text">Início</span></span></a>
+      <a class="menu-item" href="#projetos" data-go="#projetos" data-section="projetos"><span class="mi-mask"><span class="mi-text">Projetos</span></span></a>
+      <a class="menu-item" href="#sobre" data-go="#sobre" data-section="sobre"><span class="mi-mask"><span class="mi-text">Sobre</span></span></a>
+      <a class="menu-item" href="#contato" data-go="#contato" data-section="contato"><span class="mi-mask"><span class="mi-text">Contato</span></span></a>
+    </nav>
+  </div>
+
+  <!-- botão X: fecha o menu ou sai do modo imersivo, conforme o estado -->
+  <button class="ui-close" id="ui-close" type="button" aria-label="Fechar menu" hidden>
+    <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><circle cx="24" cy="24" r="22.5"/><path d="M18 18 30 30M30 18 18 30"/></svg>
+  </button>
+
+  <!-- indicador de arraste (modo imersivo) -->
+  <div class="drag-hint" id="drag-hint" aria-live="polite" hidden>
+    <span class="dh-track" aria-hidden="true"><b class="dh-arrow is-l"></b><i class="dh-dot"></i><b class="dh-arrow is-r"></b></span>
+    <span class="dh-text">Arraste para explorar</span>
+  </div>
+
+  <footer class="site-footer">
+    <span>© <span id="year"></span> CLAYSP</span>
+    <span>Feito à mão, pixel por pixel.</span>
+    <span class="credit">Imagens da Terra: NASA (Blue Marble e Black Marble). Braço 3D: <a href="https://sketchfab.com/3d-models/robotic-prosthetic-arm-43b482c8526f45709b56434924dc4d3c" target="_blank" rel="noopener">“Robotic Prosthetic Arm”</a> por <a href="https://sketchfab.com/Darren.Hogan" target="_blank" rel="noopener">Daz</a>, licença <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> (materiais e poses adaptados)</span>
+  </footer>
+
+  <script src="js/assets-data.js"></script>
+  <script>
+    /* Rede de segurança: se algo falhar no carregamento, o site nunca fica preso na abertura. */
+    window.__clayFailsafe = setTimeout(function () {
+      var i = document.getElementById('intro'); if (i) i.style.display = 'none';
+      document.body.classList.remove('intro-active');
+    }, 34000);
+  </script>
+  <script src="js/hero.js"></script>
+  <script src="js/burn.js"></script>
+  <script src="js/intro.js"></script>
+  <script src="js/menu.js"></script>
+</body>
+</html>

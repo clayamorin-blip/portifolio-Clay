@@ -1,34 +1,41 @@
 # CLAYSP — Portfólio
 
-Abertura cinematográfica da marca + hero 3D (mão humana que agarra a Terra ao rolar a página).
-Sem bibliotecas externas: tudo é HTML, CSS e JavaScript puro (WebGL2).
+Abertura cinematográfica da marca CLAYSP e hero 3D: a Terra (imagens reais da NASA) flutua no espaço; ao rolar a página, um braço robótico preto surge do alto, agarra o planeta e o leva para fora da tela. O botão **Ver globo** leva a câmera até uma órbita baixa sobre a Terra.
+Feito em HTML, CSS e JavaScript puro (WebGL2), sem bibliotecas externas.
 
-## Ver no seu computador
-Dê dois cliques em `index.html`. Funciona sem instalar nada.
+## Como o repositório está organizado
+| Caminho | O que é |
+|---|---|
+| `index.html` | **O site publicado.** Arquivo único, com estilos, animações, imagens e modelo 3D embutidos. É o que o Railway serve. |
+| `server.js`, `package.json` | Servidor simples para o Railway (sem dependências). |
+| `fonte/` | Projeto completo para editar: `index.html`, `css/`, `js/`, `assets/` e `tools/`. |
 
-Dica: abra `index.html?semintro` para pular a abertura enquanto edita.
+## Como publicar uma mudança
+1. Edite os arquivos dentro de `fonte/`.
+2. Gere o site: `python fonte/tools/embed_assets.py` e depois `python fonte/tools/build_single.py`. O segundo comando atualiza o `index.html` da raiz.
+3. Faça o commit e o push para `main`. O Railway publica sozinho.
 
-## Colocar no ar (GitHub + Railway)
-1. Crie um repositório no GitHub e envie **todos** os arquivos desta pasta (pode arrastar a pasta no site do GitHub, em "Add file → Upload files").
-2. No Railway: **New Project → Deploy from GitHub repo** → escolha o repositório.
-3. O Railway detecta o `package.json` e roda `npm start` sozinho.
-4. Em **Settings → Networking → Generate Domain**, gere o link do site (ou conecte o seu domínio).
+Para ver localmente: abra `index.html` (raiz) com dois cliques. Use `?semintro` no endereço para pular a abertura enquanto edita.
 
 ## O que trocar
-| O quê | Onde |
+| O quê | Onde (em `fonte/index.html`) |
 |---|---|
-| Número do WhatsApp | `index.html`, procure `55XXXXXXXXXXX` (DDI + DDD + número, só números) |
-| E-mail | `index.html`, procure `seuemail@exemplo.com` |
-| Projetos | `index.html`, seção `PROJETOS` — copie um bloco `<a class="project">`, troque título, tags e link; a imagem vai em `assets/projetos/` |
-| Textos do hero e da frase "O mundo inteiro, na palma da mão." | `index.html`, seção `HERO` |
-| Textos da abertura ("Seja bem-vindo :)", "Criado por") | `index.html`, atributos `data-text` |
+| Número do WhatsApp | procure `55XXXXXXXXXXX` (DDI + DDD + número, só números) |
+| E-mail | procure `seuemail@exemplo.com` |
+| Projetos | seção `PROJETOS`: copie um bloco `<a class="project">` e troque título, tags e link |
+| Textos do hero e a frase "O mundo inteiro, na palma da mão." | seção `HERO` |
+| Textos da abertura ("Seja bem-vindo :)", "Criado por") | atributos `data-text` |
 
-## Estrutura
-- `js/intro.js` — ordem da abertura (linha vermelha → boas-vindas → Criado por → C + batida → CLAYSP letra por letra → reflexos → pulsação → queima)
-- `js/burn.js` — transição de queima que revela o hero
-- `js/hero.js` — cena 3D (mão, Terra, luzes, sequência do scroll)
-- `assets/` — peças da logo recortadas da imagem original, texturas da Terra e a malha da mão
-- `tools/` — scripts Python que geraram a mão (`gen_hand.py`), a Terra (`gen_earth.py`) e os recortes da logo (`extract_logo.py`). Depois de mudar algo em `assets/`, rode `python tools/embed_assets.py`.
+## Código
+- `fonte/js/intro.js` — abertura (boas-vindas → Criado por → C + batida → CLAYSP letra por letra → reflexos → pulsação → queima) e a captura disparada pela rolagem para baixo.
+- `fonte/js/burn.js` — transição de queima que revela o hero.
+- `fonte/js/hero.js` — cena 3D: Terra, braço robótico, contato dos dedos com a esfera, câmera em órbita baixa. A sensibilidade do arraste fica em `DRAG_SENSITIVITY`.
+- `fonte/js/menu.js` — menu (bolinha na seção atual) e a experiência "Ver globo", em estados separados.
+- `fonte/tools/` — `export_arm.py` (converte o GLB do braço), `prepare_nasa.py` (texturas da Terra), `extract_logo.py` (recortes da logo), `embed_assets.py` e `build_single.py` (geram o site).
+
+## Créditos
+- Braço 3D: "Robotic Prosthetic Arm" de Daz (https://sketchfab.com/Darren.Hogan), licença CC BY 4.0, com materiais e poses adaptados. **O crédito no rodapé do site é obrigatório: mantenha-o.**
+- Imagens da Terra: NASA (Blue Marble e Black Marble), domínio público.
 
 ## Segurança
-Se qualquer efeito falhar, a abertura some sozinha e o site continua navegável. Quem usa "reduzir movimento" no sistema vê uma versão curta e calma.
+Se algum efeito falhar, a abertura some sozinha e o site continua navegável. Quem usa "reduzir movimento" no sistema vê uma versão curta e calma.

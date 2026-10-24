@@ -58,19 +58,8 @@
   }
 
   // ---------- carregamento real ----------
-  const line = $('#intro-line i'), lineWrap = $('#intro-line'), pct = $('#intro-percent');
-  let total = 0, done = 0;
-  function track(p) {
-    total++;
-    const step = () => {
-      done++;
-      const v = done / total;
-      line.style.transform = `scaleX(${v})`;
-      pct.textContent = String(Math.round(v * 100)).padStart(2, '0');
-      if (v >= 1) lineWrap.classList.add('is-full');
-    };
-    return Promise.resolve(p).then(step, step);
-  }
+  // carregamento real (sem barra visível): a marca só entra quando os recursos essenciais estão prontos
+  function track(p) { return Promise.resolve(p).catch(() => {}); }
   const imgsReady = $$('#intro img').map(img => track(img.decode ? img.decode().catch(() => {}) : null));
   const fontsReady = track(document.fonts ? Promise.race([document.fonts.ready, wait(3500)]) : null);
 
@@ -113,8 +102,6 @@
   }
 
   async function stageSymbol() {
-    lineWrap.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 600, fill: 'forwards' });
-    pct.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, fill: 'forwards' });
     await symbol.animate([
       { opacity: 0, filter: 'blur(18px) brightness(.35)', transform: 'scale(.93)' },
       { opacity: 1, filter: 'blur(0px) brightness(1)', transform: 'scale(1)' },
@@ -279,30 +266,40 @@
     finishIntro();
   }
 
-  // pular: mostra a marca pronta e queima rápido
-  $('#intro-skip').addEventListener('click', async () => {
-    if (skipped || finished) return;
-    skipped = true;
-    document.getAnimations().forEach(a => { if (intro.contains(a.effect && a.effect.target)) a.finish(); });
-    $$('.intro-text').forEach(t => t.style.opacity = 0);
-    [symbol, ...letters].forEach(el => { el.style.opacity = 1; el.style.filter = 'none'; });
-    lineWrap.style.opacity = 0; pct.style.opacity = 0;
-    halo.style.opacity = '.4';
-    try { await burnOut(1500); } catch (e) {}
-    finishIntro();
-  });
-
   // ---------- segurança: nada pode prender o visitante ----------
   window.addEventListener('error', () => { if (!finished && !skipped) setTimeout(finishIntro, 300); });
   setTimeout(() => { if (!finished) finishIntro(); }, 32000);
-  if (new URLSearchParams(location.search).has('semintro')) { allReady.then(finishIntro); }
+  let seen = false; try { seen = sessionStorage.getItem('claysp-intro') === '1'; } catch (e) {}
+  if (new URLSearchParams(location.search).has('semintro') || seen) {
+    allReady.then(() => intro.animate([{ opacity: 1 }, { opacity: 0 }], { duration: seen ? 700 : 1, fill: 'forwards' }).finished).then(finishIntro);
+  }
   else run().catch(err => { console.error(err); finishIntro(); });
 
-  // ---------- hero: pausa quando sai da tela + sequência no scroll ----------
+  // ---------- hero: pausa quando sai da tela ----------
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(([e]) => { if (hero) hero.setVisible(e.isIntersecting); }, { threshold: 0 }).observe(heroSection);
   }
-  const copy = $('#hero-copy'), cue = $('#scroll-cue'), caption = $('#hero-caption');
+
+  // ---------- captura do globo: depende SÓ da rolagem para baixo (scrollDown) ----------
+  //  • rolar para baixo a partir do topo  → scrollDown = true → a mão agarra a Terra e a leva para fora da tela (uma vez)
+  //  • voltar ao topo da página (rolando para cima) → a cena é restaurada: a Terra volta e a mão retoma a pose de cobiça
+  //  • menu, "Ver globo", X e arraste do globo não mexem nesse estado
+  const bottom = $('.hero-bottom'), cue = $('#scroll-cue'), caption = $('#hero-caption');
+  let lastY = window.scrollY, scrollDown = false, captured = false;
+  const TOP_RESTORE = 6;          // px: considerado "de volta ao topo"
+  const START_CAPTURE = 18;       // px: rolagem mínima para baixo que conta como intenção
+  function uiBusy() { const st = window.ClayMenu && window.ClayMenu.state; return st && st !== 'page'; }
+  function onScroll() {
+    const y = window.scrollY;
+    const dy = y - lastY; lastY = y;
+    if (!heroRevealed || uiBusy()) return;
+    if (dy > 0) scrollDown = true; else if (dy < 0) scrollDown = false;
+    if (!captured && scrollDown && y > START_CAPTURE) { captured = true; if (hero) hero.setCapture(true); }
+    else if (captured && !scrollDown && y <= TOP_RESTORE) { captured = false; if (hero) hero.setCapture(false); }
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  // legenda e textos acompanham o progresso real da animação de captura
   let capChars = null, capShown = false, capAnims = [];
   function showCaption(on) {
     if (on === capShown || !caption) return;
@@ -313,20 +310,29 @@
       ? capChars.map((c, i) => c.animate([{ opacity: 0, filter: 'blur(12px)', transform: 'translateX(.3em)' }, { opacity: 1, filter: 'blur(0)', transform: 'translateX(0)' }], { duration: 900, delay: i * 32, easing: 'cubic-bezier(.2,.65,.25,1)', fill: 'forwards' }))
       : capChars.map((c, i) => c.animate([{ opacity: getComputedStyle(c).opacity, filter: 'blur(0)' }, { opacity: 0, filter: 'blur(10px)' }], { duration: 450, delay: i * 10, fill: 'forwards' }));
   }
-  function onScroll() {
+  // Textos do hero (linha vermelha + rótulo, título e frase de apoio): visibilidade ligada ao PROGRESSO DA ROLAGEM.
+  // Ficam 100% visíveis até TEXT_HOLD do percurso do hero e saem aos poucos até TEXT_GONE.
+  // Sem temporizador: se a rolagem parar, eles ficam como estão; ao voltar para cima, reaparecem na mesma medida.
+  const TEXT_HOLD = 0.30, TEXT_GONE = 0.62;
+  const copy = $('#hero-copy'), seeBtn = $('#see-globe');
+  function heroProgress() {
     const r = heroSection.getBoundingClientRect();
-    const span = Math.max(1, r.height - innerHeight);
-    const p = Math.min(1, Math.max(0, -r.top / span));
-    if (hero) hero.setScroll(p);
-    if (heroRevealed) {
-      const f = 1 - Math.min(1, Math.max(0, (p - 0.015) / 0.09));
-      copy.style.opacity = f; copy.style.transform = `translateY(${(1 - f) * -18}px)`;
-      copy.style.pointerEvents = f < 0.2 ? 'none' : '';
-      cue.style.filter = `opacity(${f})`;
-    }
-    showCaption(p > 0.42 && p < 0.66);
+    return Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - innerHeight)));
   }
-  window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', onScroll);
-  onScroll();
+  (function watch() {
+    requestAnimationFrame(watch);
+    if (!hero || !heroRevealed) return;
+    const c = hero.capture, p = heroProgress();
+    let k = Math.min(1, Math.max(0, (p - TEXT_HOLD) / (TEXT_GONE - TEXT_HOLD)));
+    k = k * k * (3 - 2 * k);
+    if (copy) {
+      copy.style.opacity = (1 - k).toFixed(3);
+      copy.style.transform = `translate3d(0, ${(-26 * k).toFixed(1)}px, 0)`;
+      copy.style.filter = k > 0.001 ? `blur(${(k * 6).toFixed(2)}px)` : '';
+    }
+    // o botão "Ver globo" só faz sentido na composição inicial (antes da captura)
+    if (seeBtn) seeBtn.classList.toggle('is-away', c > 0.02 || p > 0.04);
+    if (cue) cue.style.opacity = c > 0.02 ? 0 : 1;
+    showCaption(c > 0.85 && c < 1.45);
+  })();
 })();
