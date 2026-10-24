@@ -1,0 +1,13 @@
+{
+  "name": "claysp-portfolio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Portfólio CLAYSP — abertura cinematográfica e hero 3D",
+  "scripts": {
+    "start": "serve . -l tcp://0.0.0.0:${PORT:-3000} --no-clipboard"
+  },
+  "dependencies": {
+    "serve": "14.2.4"
+  },
+  "engines": { "node": ">=18" }
+}

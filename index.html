@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>CLAYSP — Portfólio</title>
+  <meta name="description" content="CLAYSP — web design, 3D e experiências digitais feitas sob medida.">
+  <meta name="theme-color" content="#000000">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="intro-active">
+
+  <!-- ===================== ABERTURA ===================== -->
+  <div id="intro" role="presentation">
+    <div class="intro-stage">
+      <p class="intro-text" id="intro-hello" data-text="Seja bem-vindo :)" aria-hidden="true"></p>
+      <p class="intro-text is-small" id="intro-by" data-text="Criado por" aria-hidden="true"></p>
+
+      <div class="brand" id="brand" aria-label="CLAYSP">
+        <div class="brand-halo"></div>
+        <img class="brand-symbol" alt="" data-asset="symbol">
+        <div class="brand-letter" data-l="C"><img alt="" data-asset="C"><span class="sheen"><i></i></span></div>
+        <div class="brand-letter" data-l="L"><img alt="" data-asset="L"><span class="sheen"><i></i></span></div>
+        <div class="brand-letter" data-l="A"><img alt="" data-asset="A"><span class="sheen"><i></i></span></div>
+        <div class="brand-letter" data-l="Y"><img alt="" data-asset="Y"><span class="sheen"><i></i></span></div>
+        <div class="brand-letter" data-l="S"><img alt="" data-asset="S"><span class="sheen"><i></i></span></div>
+        <div class="brand-letter" data-l="P"><img alt="" data-asset="P"><span class="sheen"><i></i></span></div>
+      </div>
+
+      <div class="intro-line" id="intro-line"><i></i><b></b></div>
+      <div class="intro-percent" id="intro-percent">00</div>
+      <button class="intro-skip" id="intro-skip" type="button">Pular intro</button>
+    </div>
+  </div>
+
+  <!-- ===================== CABEÇALHO ===================== -->
+  <header class="site-header">
+    <a class="mark" href="#topo" aria-label="CLAYSP — início">
+      <img alt="" data-asset="symbol">
+      <span>CLAYSP</span>
+    </a>
+    <nav>
+      <a href="#projetos">Projetos</a>
+      <a href="#sobre">Sobre</a>
+      <a href="#contato">Contato</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ===================== HERO ===================== -->
+    <!-- A seção é alta para dar espaço ao scroll: a mão desce, agarra a Terra e sobe com ela. -->
+    <section class="hero" id="topo">
+      <div class="hero-sticky">
+        <canvas id="hero-canvas" aria-label="Uma mão humana desce do alto, agarra a Terra e a leva para cima"></canvas>
+        <div class="hero-fallback"><img alt="" data-asset="symbol"></div>
+        <div class="hero-grain" aria-hidden="true"></div>
+
+        <div class="hero-copy" id="hero-copy">
+          <div class="eyebrow fade-up">Portfólio · Web design &amp; 3D</div>
+          <h1 class="hero-title reveal" data-reveal>Experiências web <em>fora deste mundo.</em></h1>
+          <p class="hero-sub fade-up">Sites sob medida, com design, movimento e 3D que fazem a sua marca ser lembrada.</p>
+          <div class="hero-actions fade-up">
+            <a class="btn is-solid" href="#projetos">Ver projetos</a>
+            <a class="btn" href="#contato">Falar comigo</a>
+          </div>
+        </div>
+
+        <p class="hero-caption" id="hero-caption" data-text="O mundo inteiro, na palma da mão." aria-hidden="true"></p>
+        <div class="scroll-cue fade-up" id="scroll-cue">Role</div>
+      </div>
+    </section>
+
+    <!-- ===================== PROJETOS ===================== -->
+    <!-- Para adicionar um projeto: copie um bloco <a class="project">, troque o título, as tags, o link
+         e coloque a imagem em assets/projetos/ (ex.: style="background-image:url(assets/projetos/meu-site.jpg)"). -->
+    <section class="section" id="projetos">
+      <div class="section-head">
+        <div>
+          <span class="index">01 — PROJETOS</span>
+          <h2>Trabalhos selecionados</h2>
+        </div>
+        <p>Cada site é pensado como uma experiência: identidade, movimento e detalhe.</p>
+      </div>
+      <div class="projects">
+        <a class="project" href="#" target="_blank" rel="noopener">
+          <div class="thumb placeholder"></div>
+          <span class="num">01</span>
+          <div><h3>Seu projeto aqui</h3><div class="tags">Site · Identidade · 2026</div></div>
+        </a>
+        <a class="project" href="#" target="_blank" rel="noopener">
+          <div class="thumb placeholder"></div>
+          <span class="num">02</span>
+          <div><h3>Seu projeto aqui</h3><div class="tags">Landing page · Animação</div></div>
+        </a>
+        <a class="project" href="#" target="_blank" rel="noopener">
+          <div class="thumb placeholder"></div>
+          <span class="num">03</span>
+          <div><h3>Seu projeto aqui</h3><div class="tags">E-commerce · 3D</div></div>
+        </a>
+      </div>
+    </section>
+
+    <!-- ===================== SOBRE ===================== -->
+    <section class="section" id="sobre">
+      <div class="about">
+        <div>
+          <span class="index">02 — SOBRE</span>
+          <h2>Design que se sente <em>antes</em> de ser lido.</h2>
+        </div>
+        <div>
+          <p>Sou a CLAYSP. Crio sites que unem estética de luxo, movimento cinematográfico e tecnologia — do primeiro esboço ao site no ar.</p>
+          <p>Cada projeto é feito sob medida, com atenção a cada transição, cada reflexo e cada segundo da experiência de quem visita.</p>
+          <div class="skills"><span>Web design</span><span>3D interativo</span><span>Animação</span><span>Identidade visual</span><span>Landing pages</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== CONTATO ===================== -->
+    <section class="section contact" id="contato">
+      <span class="index">03 — CONTATO</span>
+      <h2>Vamos criar algo <em>inesquecível?</em></h2>
+      <!-- Troque 55XXXXXXXXXXX pelo seu número com DDI e DDD, só números -->
+      <a class="btn is-solid" href="https://wa.me/55XXXXXXXXXXX" target="_blank" rel="noopener">Chamar no WhatsApp</a>
+      <a class="btn" href="mailto:seuemail@exemplo.com">Enviar e-mail</a>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span>© <span id="year"></span> CLAYSP</span>
+    <span>Feito à mão, pixel por pixel.</span>
+  </footer>
+
+  <script src="js/assets-data.js"></script>
+  <script>
+    /* Rede de segurança: se algo falhar no carregamento, o site nunca fica preso na abertura. */
+    window.__clayFailsafe = setTimeout(function () {
+      var i = document.getElementById('intro'); if (i) i.style.display = 'none';
+      document.body.classList.remove('intro-active');
+    }, 34000);
+  </script>
+  <script src="js/hero.js"></script>
+  <script src="js/burn.js"></script>
+  <script src="js/intro.js"></script>
+</body>
+</html>
