@@ -216,9 +216,11 @@ img { display: block; max-width: 100%; }
   transition: opacity .6s, transform .6s cubic-bezier(.2,.7,.2,1);
 }
 .hero-copy { max-width: min(520px, 86vw); min-width: 0; pointer-events: none; }
-body.is-focus .hero-bottom, .hero-bottom.is-away { opacity: 0; transform: translateY(14px); pointer-events: none; }
+body.is-focus .hero-bottom { opacity: 0; transform: translateY(14px); pointer-events: none; }
+.hero-copy { will-change: opacity, transform; }
+.orbit-btn.is-away { opacity: 0 !important; transform: translateY(10px) scale(.96) !important; pointer-events: none !important; transition: opacity .5s, transform .5s; }
 .hero-bottom .orbit-btn { pointer-events: auto; width: clamp(118px, 11vw, 150px); margin-bottom: 4px; }
-.hero-bottom.is-away .orbit-btn { pointer-events: none; }
+
 .eyebrow { display: flex; align-items: center; gap: 14px; font: 500 10px/1 var(--ui); letter-spacing: .38em; text-transform: uppercase; color: var(--chrome-dim); margin-bottom: 18px; }
 .eyebrow::before { content: ''; width: 34px; height: 1px; background: var(--red); box-shadow: 0 0 8px var(--red-glow); }
 .hero-title {
@@ -294,7 +296,7 @@ body.is-focus .hero-bottom, .hero-bottom.is-away { opacity: 0; transform: transl
   .site-header nav { display: none; }
   .orbit-btn { width: 132px; }
   .ui-close { top: 14px; right: 14px; }
-  .hero-caption { left: 50%; top: auto; bottom: clamp(36px, 9vh, 80px); transform: translateX(-50%); max-width: 88vw; width: max-content; text-align: center; }
+  .hero-caption { left: 50%; top: calc(clamp(64px, 11vh, 96px) + env(safe-area-inset-top, 0px)); bottom: auto; transform: translateX(-50%); max-width: 88vw; width: max-content; text-align: center; }
   .about { grid-template-columns: 1fr; }
   .scroll-cue { display: none; }
   .hero-bottom { flex-direction: column-reverse; align-items: flex-start; gap: 18px; }
@@ -694,9 +696,11 @@ in vec3 vW, vN; in vec2 vUv; in vec4 vLP;
 uniform sampler2D uDay, uClouds, uSpec;
 uniform sampler2DShadow uShadow;
 uniform vec3 uCam, uSun, uKeyCol;
-uniform float uCloudOff, uFade, uExposure, uTime;
+uniform float uCloudOff, uFade, uExposure, uTime, uDetail;
+uniform mat3 uInvRot;
 out vec4 frag;
 ${COMMON}
+float fbm3(vec3 p){ float a = 0.5, s = 0.0; for (int i = 0; i < 5; i++){ s += a * vnoise(p); p = p * 2.03 + 1.7; a *= 0.5; } return s; }
 void main(){
   vec3 N = normalize(vN);
   vec3 Vv = normalize(uCam - vW);
@@ -704,6 +708,14 @@ void main(){
   float water = texture(uSpec, vUv).r;
   vec2 cuv = vec2(vUv.x + uCloudOff, vUv.y);
   float cl = texture(uClouds, cuv).r;
+  // de perto (órbita baixa) a textura sozinha fica borrada: soma relevo procedural no espaço do planeta
+  vec3 P = uInvRot * N;
+  if (uDetail > 0.001) {
+    float fine = fbm3(P * 38.0 + vec3(uCloudOff * 40.0, 0.0, 0.0));
+    float wisps = fbm3(P * 110.0);
+    cl = clamp(cl + (fine - 0.5) * 0.32 * uDetail * smoothstep(0.05, 0.5, cl + 0.2) + (wisps - 0.5) * 0.14 * uDetail * cl, 0.0, 1.0);
+    day *= mix(1.0, 0.82 + 0.36 * fbm3(P * 70.0), uDetail * (1.0 - water));
+  }
   float clShadow = texture(uClouds, cuv + vec2(0.003, 0.002)).r;
   float NoL = dot(N, uSun);
   float lit = smoothstep(-0.12, 0.35, NoL);
@@ -733,15 +745,37 @@ void main(){
   const ATMO_FS = `#version 300 es
 precision highp float;
 in vec3 vW, vN; in vec2 vUv; in vec4 vLP;
-uniform vec3 uCam, uSun; uniform float uFade;
+uniform vec3 uCam, uSun; uniform float uFade, uThin;
 out vec4 frag;
 void main(){
   vec3 N = normalize(vN); vec3 Vv = normalize(uCam - vW);
   float d = max(-dot(N, Vv), 0.0);
-  float g = pow(d, 2.2) * 2.2 * smoothstep(0.0, 0.33, d);
+  float g = pow(d, mix(2.2, 0.9, uThin)) * mix(2.2, 3.2, uThin) * smoothstep(0.0, mix(0.33, 0.05, uThin), d);
   float s = smoothstep(-0.45, 0.7, dot(N, uSun)) * 0.9 + 0.1;
   vec3 c = vec3(0.30, 0.55, 1.0) * g * s;
   frag = vec4(c * uFade, 0.0);
+}`;
+  const SUN_VS = `#version 300 es
+layout(location=0) in vec2 aP; out vec2 vP; void main(){ vP = aP; gl_Position = vec4(aP, 0.0, 1.0); }`;
+  const SUN_FS = `#version 300 es
+precision highp float;
+in vec2 vP; uniform vec2 uSunPos; uniform float uAsp, uI; out vec4 frag;
+void main(){
+  vec2 d = (vP - uSunPos) * vec2(uAsp, 1.0);
+  float r = length(d);
+  vec3 c = vec3(1.0, 0.97, 0.92) * (exp(-r * 38.0) * 2.2 + exp(-r * 7.0) * 0.32 + exp(-r * 2.2) * 0.08);
+  c += vec3(0.9, 0.93, 1.0) * exp(-abs(d.x) * 140.0) * exp(-abs(d.y) * 3.5) * 0.30;     // raio vertical
+  c += vec3(0.9, 0.93, 1.0) * exp(-abs(d.y) * 160.0) * exp(-abs(d.x) * 5.0) * 0.12;     // raio horizontal
+  // reflexos da lente ao longo da linha Sol → centro
+  vec2 axis = -uSunPos;
+  for (int i = 1; i <= 4; i++) {
+    float k = float(i) * 0.38;
+    vec2 g = (vP - (uSunPos + axis * k)) * vec2(uAsp, 1.0);
+    float rr = length(g); float sz = 0.018 + 0.012 * float(i);
+    vec3 tint = i == 1 ? vec3(0.3, 0.9, 0.7) : i == 2 ? vec3(0.7, 0.4, 1.0) : i == 3 ? vec3(0.3, 0.6, 1.0) : vec3(1.0, 0.5, 0.4);
+    c += tint * smoothstep(sz, sz * 0.3, rr) * 0.045;
+  }
+  frag = vec4(c * uI, 0.0);
 }`;
   const STAR_VS = `#version 300 es
 precision highp float;
@@ -892,6 +926,7 @@ precision mediump float; out vec4 frag; void main(){ frag = vec4(1.0); }`;
     const det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
     return inv.map(v => v / det);
   };
+  const xf4 = (m, p) => [m[0] * p[0] + m[4] * p[1] + m[8] * p[2] + m[12], m[1] * p[0] + m[5] * p[1] + m[9] * p[2] + m[13], m[2] * p[0] + m[6] * p[1] + m[10] * p[2] + m[14], m[3] * p[0] + m[7] * p[1] + m[11] * p[2] + m[15]];
   const xf = (m, p) => [m[0] * p[0] + m[4] * p[1] + m[8] * p[2] + m[12], m[1] * p[0] + m[5] * p[1] + m[9] * p[2] + m[13], m[2] * p[0] + m[6] * p[1] + m[10] * p[2] + m[14]];
   const xfDir = (m, d) => [m[0] * d[0] + m[4] * d[1] + m[8] * d[2], m[1] * d[0] + m[5] * d[1] + m[9] * d[2], m[2] * d[0] + m[6] * d[1] + m[10] * d[2]];
 
@@ -1087,13 +1122,14 @@ precision mediump float; out vec4 frag; void main(){ frag = vec4(1.0); }`;
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const A = window.CLAY_ASSETS || {};
 
-    let progArm, progArmDepth, progGlobe, progAtmo, progStar;
+    let progArm, progArmDepth, progGlobe, progAtmo, progStar, progSun;
     function buildPrograms() {
       progArm = compile(gl, ARM_VS, ARM_FS);
       progArmDepth = compile(gl, ARM_VS.replace('gl_Position = uVP * wp;', 'gl_Position = uLightVP * wp;'), ARM_DEPTH_FS);
       progGlobe = compile(gl, GLOBE_VS, GLOBE_FS);
       progAtmo = compile(gl, GLOBE_VS, ATMO_FS);
       progStar = compile(gl, STAR_VS, STAR_FS);
+      progSun = compile(gl, SUN_VS, SUN_FS);
     }
 
     // ---- recursos de GPU (recriados se o navegador perder o contexto) ----
@@ -1105,7 +1141,7 @@ precision mediump float; out vec4 frag; void main(){ frag = vec4(1.0); }`;
       const u = Math.random() * 2 - 1, a = Math.random() * Math.PI * 2, r = 40, s = Math.sqrt(1 - u * u);
       starData.set([Math.cos(a) * s * r, u * r, -Math.abs(Math.sin(a) * s * r) - 6, Math.random() * 0.999], i * 4);
     }
-    let globeVAO, globeCount, starVAO, smTex, smFB, arm = null, texGlobe = null;
+    let quadVAO, globeVAO, globeCount, starVAO, smTex, smFB, arm = null, texGlobe = null;
     let images = null, armBuf = null, armMeta = null, rig = null;
 
     function buildStatic() {
@@ -1124,6 +1160,9 @@ precision mediump float; out vec4 frag; void main(){ frag = vec4(1.0); }`;
       starVAO = gl.createVertexArray(); gl.bindVertexArray(starVAO);
       const sb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, sb); gl.bufferData(gl.ARRAY_BUFFER, starData, gl.STATIC_DRAW);
       gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 4, gl.FLOAT, false, 0, 0);
+      quadVAO = gl.createVertexArray(); gl.bindVertexArray(quadVAO);
+      const qb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, qb); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+      gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
       gl.bindVertexArray(null);
       smTex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, smTex);
       gl.texStorage2D(gl.TEXTURE_2D, 1, gl.DEPTH_COMPONENT24, SM, SM);
@@ -1258,28 +1297,58 @@ precision mediump float; out vec4 frag; void main(){ frag = vec4(1.0); }`;
     // ---- câmera ----
     // referência: a composição anterior. Início: ~40% mais longe. "Ver globo": ~70% mais perto.
     const FOV = 30 * Math.PI / 180;
+    // Órbita baixa ("Ver globo"): a câmera vai até ~18% do raio acima da superfície, olhando para o horizonte
+    // na direção do Sol (que surge logo acima do limbo), com o horizonte cruzando a tela em diagonal.
+    const makeOrbit = (yaw) => {
+      const sun = keyDir;
+      const t = V.norm(V.sub([0, 0, 1], V.mul(sun, sun[2])));           // lado do planeta voltado para a câmera inicial
+      const up = V.norm(V.add(V.mul(sun, -0.26), V.mul(t, 0.966)));      // Sol ~15° abaixo da horizontal local (amanhecer)
+      const alt = 0.18;                                                  // altitude, em raios
+      const dip = Math.acos(1 / (1 + alt));                             // quanto o horizonte "desce" visto dessa altura
+      let fwd = V.norm(V.sub(sun, V.mul(up, V.dot(sun, up))));         // horizontal, na direção do Sol
+      const side = V.norm(V.cross(fwd, up));
+      fwd = V.norm(V.add(V.mul(fwd, Math.cos(yaw)), V.mul(side, -Math.sin(yaw))));     // Sol um pouco à direita
+      const pitch = -(dip - 0.085);
+      const f = V.norm(V.add(V.mul(fwd, Math.cos(pitch)), V.mul(up, Math.sin(pitch))));
+      // inclinação (roll) para o horizonte atravessar em diagonal suave
+      const roll = -0.21, r0 = V.norm(V.cross(f, up)), u0 = V.cross(r0, f);
+      const camUp = V.norm(V.add(V.mul(u0, Math.cos(roll)), V.mul(r0, Math.sin(roll))));
+      return { up, alt, f, camUp };
+    };
+    const ORBIT_WIDE = makeOrbit(0.16), ORBIT_TALL = makeOrbit(0.05);   // telas largas / em pé
     function camera() {
       const asp = W / H, tn = Math.tan(FOV / 2);
-      const needH = 4.1, needW = 2.9;                        // enquadramento da versão anterior
+      const needH = 4.1, needW = 2.9;                        // enquadramento da versão anterior (referência)
       const base = Math.max((needH / 2) / tn, (needW / 2) / (tn * asp)) * 1.04;
-      const far = base * 1.4;
-      // perto: ~70% mais próximo que a composição anterior, mas sem a Terra passar muito da largura da tela
-      const near = Math.max(base * 0.30, GLOBE_R / (tn * asp * 0.92), GLOBE_R * 1.6);
-      const fk = focusK < 0.5 ? 4 * focusK * focusK * focusK : 1 - Math.pow(-2 * focusK + 2, 3) / 2; // entrada e saída lentas
-      // centro do quadro: entre o globo e a mão no início; o globo no modo imersivo
+      const far = base * 1.4;                                 // início: ~40% mais longe
+      const fk = focusK < 0.5 ? 4 * focusK * focusK * focusK : 1 - Math.pow(-2 * focusK + 2, 3) / 2; // acelera e desacelera
       const ty0 = asp < 0.8 ? 0.55 : 0.62;
       const tx0 = asp < 0.8 ? 0.32 : 0.12;
-      const tgt = [mix(tx0, GLOBE_POS[0], fk), mix(ty0, GLOBE_POS[1], fk), 0];
-      const dist = mix(far, near, fk);
-      const el = mix(0.07, 0.02, fk);
       const az = +(qs.get('az') || 0);
-      const eye = [tgt[0] + Math.sin(az) * Math.cos(el) * dist, tgt[1] + Math.sin(el) * dist, Math.cos(az) * Math.cos(el) * dist];
-      const view = M.look(eye, tgt, [0, 1, 0]);
-      const proj = M.persp(FOV, asp, 0.05, 120);
-      return { eye, vp: M.mul(proj, view) };
+      const tgt0 = [tx0, ty0, 0];
+      const eye0 = [tx0 + Math.sin(az) * far, ty0 + Math.sin(0.07) * far, Math.cos(az) * Math.cos(0.07) * far];
+      // destino: perto da superfície (a escala vem da câmera, não do tamanho dos modelos)
+      const ORBIT = asp < 0.8 ? ORBIT_TALL : ORBIT_WIDE;
+      const eye1 = V.add(GLOBE_POS, V.mul(ORBIT.up, GLOBE_R * (1 + ORBIT.alt)));
+      // trajetória: avança olhando para o planeta (ele cresce na tela) e, no fim, ergue o olhar para o horizonte
+      const eye = V.lerp(eye0, eye1, sstep(0.0, 0.82, focusK));
+      const tgtA = V.lerp(tgt0, GLOBE_POS, sstep(0.0, 0.5, focusK));
+      const fA = V.norm(V.sub(tgtA, eye));
+      const turn = sstep(0.5, 1.0, focusK);
+      const fwd = V.norm(V.lerp(fA, ORBIT.f, turn));
+      const up = V.norm(V.lerp([0, 1, 0], ORBIT.camUp, turn));
+      const view = M.look(eye, V.add(eye, fwd), up);
+      const fovNow = FOV * mix(1, asp < 0.8 ? 1.75 : 1.35, fk);   // de perto, um pouco mais de campo de visão
+      const proj = M.persp(fovNow, asp, 0.01, 120);
+      return { eye, vp: M.mul(proj, view), fk };
     }
 
     // ---- arraste do globo (somente horizontal, somente no modo "Ver globo") ----
+    // Sensibilidade: radianos de rotação por pixel arrastado. Antes: 0.0055 → agora 25% disso (planeta pesado, imenso).
+    const DRAG_SENSITIVITY = 0.0055 * 0.25;
+    const DRAG_SMOOTH = 7.0;      // suavização do giro (maior = responde mais rápido)
+    const DRAG_INERTIA = 0.35;    // quanto do impulso continua depois de soltar (0 = nenhum)
+    let rotTarget = null;
     function onDown(e) {
       if (!focusOn || focusK < 0.85) return;
       dragging = true; lastX = e.clientX; lastY = e.clientY; dragDist = 0; dragVel = 0;
@@ -1290,8 +1359,10 @@ precision mediump float; out vec4 frag; void main(){ frag = vec4(1.0); }`;
       if (!dragging) return;
       const dx = e.clientX - lastX, dy = e.clientY - lastY;
       lastX = e.clientX; lastY = e.clientY;
-      const k = 0.0055;
-      earthRot += dx * k; dragVel = dx * k * 60;          // o componente vertical é ignorado
+      // só o componente horizontal gira; o vertical é ignorado
+      if (rotTarget === null) rotTarget = earthRot;
+      rotTarget += dx * DRAG_SENSITIVITY;
+      dragVel = dx * DRAG_SENSITIVITY * 60 * DRAG_INERTIA;
       dragDist += Math.abs(dx);
       if (!firstDragDone && dragDist > 36 && Math.abs(dx) >= Math.abs(dy)) { firstDragDone = true; if (onFirstDrag) onFirstDrag(); }
     }
@@ -1316,14 +1387,19 @@ precision mediump float; out vec4 frag; void main(){ frag = vec4(1.0); }`;
       if (cap < capTarget) cap = Math.min(capTarget, cap + realDt * speed);
       else if (cap > capTarget) cap = Math.max(capTarget, cap - realDt * speed * 1.2);
       // câmera do "Ver globo": ~2,6 s para entrar ou sair
-      const fT = focusOn ? 1 : 0, fs = reducedMotion ? 6 : 1 / 2.6;
+      const fT = focusOn ? 1 : 0, fs = reducedMotion ? 6 : 1 / 3.2;
       if (focusK < fT) focusK = Math.min(fT, focusK + realDt * fs); else if (focusK > fT) focusK = Math.max(fT, focusK - realDt * fs);
       pointer.x += (pointer.tx - pointer.x) * (1 - Math.exp(-dt * 3));
       pointer.y += (pointer.ty - pointer.y) * (1 - Math.exp(-dt * 3));
       const { pose, globePos, grip } = computeArm(time);
       // rotação própria da Terra: para quando é agarrada; no modo imersivo segue o arraste com inércia
-      if (!dragging) { earthRot += dragVel * dt; dragVel *= Math.exp(-dt * 2.6); }
-      earthRot += dt * earthVel * (1 - grip) * (focusOn ? 0.25 : 1);
+      if (rotTarget !== null) {
+        if (!dragging) { rotTarget += dragVel * dt; dragVel *= Math.exp(-dt * 4.5); }
+        earthRot += (rotTarget - earthRot) * (1 - Math.exp(-dt * DRAG_SMOOTH));
+        if (!focusOn && Math.abs(rotTarget - earthRot) < 1e-4) rotTarget = null;
+      }
+      const spin = dt * earthVel * (1 - grip) * (focusOn ? 0.12 : 1);
+      earthRot += spin; if (rotTarget !== null) rotTarget += spin;
       cloudOff += dt * 0.004 * (1 - grip * 0.8);
       draw(pose, globePos);
     }
@@ -1371,6 +1447,9 @@ precision mediump float; out vec4 frag; void main(){ frag = vec4(1.0); }`;
       gl.uniformMatrix4fv(G.uModel, false, globeModel); gl.uniformMatrix4fv(G.uVP, false, cam.vp); gl.uniformMatrix4fv(G.uLightVP, false, lightVP);
       gl.uniform3fv(G.uCam, cam.eye); gl.uniform3fv(G.uSun, keyDir); gl.uniform3fv(G.uKeyCol, [1.0, 0.97, 0.93]);
       gl.uniform1f(G.uCloudOff, cloudOff); gl.uniform1f(G.uFade, f); gl.uniform1f(G.uExposure, 1.15); gl.uniform1f(G.uTime, time);
+      gl.uniform1f(G.uDetail, cam.fk);
+      { const q = Q.mul(Q.axis([0, 0, 1], 0.32), Q.axis([0, 1, 0], earthRot)); const m = M.trs([0, 0, 0], [-q[0], -q[1], -q[2], q[3]], 1);
+        gl.uniformMatrix3fv(G.uInvRot, false, [m[0], m[1], m[2], m[4], m[5], m[6], m[8], m[9], m[10]]); }
       gl.bindVertexArray(globeVAO); gl.drawElements(gl.TRIANGLES, globeCount, gl.UNSIGNED_INT, 0);
       // braço
       gl.disable(gl.CULL_FACE);
@@ -1395,11 +1474,28 @@ precision mediump float; out vec4 frag; void main(){ frag = vec4(1.0); }`;
       // atmosfera
       gl.useProgram(progAtmo.p);
       const At = progAtmo.U;
-      gl.uniformMatrix4fv(At.uModel, false, M.trs(globePos, [0, 0, 0, 1], 1.07 * GLOBE_R)); gl.uniformMatrix4fv(At.uVP, false, cam.vp);
+      gl.uniformMatrix4fv(At.uModel, false, M.trs(globePos, [0, 0, 0, 1], mix(1.07, 1.022, cam.fk) * GLOBE_R)); gl.uniformMatrix4fv(At.uVP, false, cam.vp);
+      gl.uniform1f(At.uThin, cam.fk);
       gl.uniform3fv(At.uCam, cam.eye); gl.uniform3fv(At.uSun, keyDir); gl.uniform1f(At.uFade, f);
       gl.cullFace(gl.FRONT); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); gl.depthMask(false);
       gl.bindVertexArray(globeVAO); gl.drawElements(gl.TRIANGLES, globeCount, gl.UNSIGNED_INT, 0);
       gl.cullFace(gl.BACK); gl.disable(gl.BLEND); gl.depthMask(true);
+      // Sol nascendo atrás do limbo (só aparece quando a câmera está perto)
+      if (cam.fk > 0.02) {
+        const sp = xf4(cam.vp, V.add(cam.eye, V.mul(keyDir, 60)));
+        if (sp[3] > 0) {
+          const sx = sp[0] / sp[3], sy = sp[1] / sp[3];
+          // a Terra encobre o Sol? (distância do raio ao centro do planeta)
+          const oc = V.sub(globePos, cam.eye), tca = V.dot(oc, keyDir);
+          const dPerp = Math.sqrt(Math.max(0, V.dot(oc, oc) - tca * tca));
+          const vis = tca < 0 ? 1 : sstep(GLOBE_R * 0.995, GLOBE_R * 1.05, dPerp);
+          gl.disable(gl.DEPTH_TEST); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE);
+          gl.useProgram(progSun.p);
+          gl.uniform2f(progSun.U.uSunPos, sx, sy); gl.uniform1f(progSun.U.uAsp, W / H); gl.uniform1f(progSun.U.uI, cam.fk * cam.fk * vis * f);
+          gl.bindVertexArray(quadVAO); gl.drawArrays(gl.TRIANGLES, 0, 3);
+          gl.disable(gl.BLEND); gl.enable(gl.DEPTH_TEST);
+        }
+      }
       gl.bindVertexArray(null);
     }
 
@@ -2023,11 +2119,28 @@ void main(){
       ? capChars.map((c, i) => c.animate([{ opacity: 0, filter: 'blur(12px)', transform: 'translateX(.3em)' }, { opacity: 1, filter: 'blur(0)', transform: 'translateX(0)' }], { duration: 900, delay: i * 32, easing: 'cubic-bezier(.2,.65,.25,1)', fill: 'forwards' }))
       : capChars.map((c, i) => c.animate([{ opacity: getComputedStyle(c).opacity, filter: 'blur(0)' }, { opacity: 0, filter: 'blur(10px)' }], { duration: 450, delay: i * 10, fill: 'forwards' }));
   }
+  // Textos do hero (linha vermelha + rótulo, título e frase de apoio): visibilidade ligada ao PROGRESSO DA ROLAGEM.
+  // Ficam 100% visíveis até TEXT_HOLD do percurso do hero e saem aos poucos até TEXT_GONE.
+  // Sem temporizador: se a rolagem parar, eles ficam como estão; ao voltar para cima, reaparecem na mesma medida.
+  const TEXT_HOLD = 0.30, TEXT_GONE = 0.62;
+  const copy = $('#hero-copy'), seeBtn = $('#see-globe');
+  function heroProgress() {
+    const r = heroSection.getBoundingClientRect();
+    return Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - innerHeight)));
+  }
   (function watch() {
     requestAnimationFrame(watch);
     if (!hero || !heroRevealed) return;
-    const c = hero.capture;
-    if (bottom) bottom.classList.toggle('is-away', c > 0.02 || window.scrollY > 40);
+    const c = hero.capture, p = heroProgress();
+    let k = Math.min(1, Math.max(0, (p - TEXT_HOLD) / (TEXT_GONE - TEXT_HOLD)));
+    k = k * k * (3 - 2 * k);
+    if (copy) {
+      copy.style.opacity = (1 - k).toFixed(3);
+      copy.style.transform = `translate3d(0, ${(-26 * k).toFixed(1)}px, 0)`;
+      copy.style.filter = k > 0.001 ? `blur(${(k * 6).toFixed(2)}px)` : '';
+    }
+    // o botão "Ver globo" só faz sentido na composição inicial (antes da captura)
+    if (seeBtn) seeBtn.classList.toggle('is-away', c > 0.02 || p > 0.04);
     if (cue) cue.style.opacity = c > 0.02 ? 0 : 1;
     showCaption(c > 0.85 && c < 1.45);
   })();
@@ -2055,7 +2168,7 @@ void main(){
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const T = ms => (reduced ? 30 : ms);
   const wait = ms => new Promise(r => setTimeout(r, ms));
-  const CAMERA_MS = 2600;           // mesma duração da câmera em js/hero.js (entrada e saída)
+  const CAMERA_MS = 3200;           // mesma duração da câmera em js/hero.js (entrada e saída)
   let state = 'page';
   let lastFocus = null;
 
