@@ -141,6 +141,13 @@
 
   // ---------- eventos ----------
   openBtn.addEventListener('click', openMenu);
+  // logotipo: volta ao início rolando suavemente (a sequência do hero se desfaz no caminho)
+  const home = document.getElementById('home-link');
+  if (home) home.addEventListener('click', e => {
+    if (state !== 'page') return;
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+  });
   if (seeBtn) seeBtn.addEventListener('click', enterGlobe);
   closeBtn.addEventListener('click', () => {
     if (state === 'menu') closeMenu();

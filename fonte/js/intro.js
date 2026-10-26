@@ -280,59 +280,63 @@
     new IntersectionObserver(([e]) => { if (hero) hero.setVisible(e.isIntersecting); }, { threshold: 0 }).observe(heroSection);
   }
 
-  // ---------- captura do globo: depende SÓ da rolagem para baixo (scrollDown) ----------
-  //  • rolar para baixo a partir do topo  → scrollDown = true → a mão agarra a Terra e a leva para fora da tela (uma vez)
-  //  • voltar ao topo da página (rolando para cima) → a cena é restaurada: a Terra volta e a mão retoma a pose de cobiça
-  //  • menu, "Ver globo", X e arraste do globo não mexem nesse estado
-  const bottom = $('.hero-bottom'), cue = $('#scroll-cue'), caption = $('#hero-caption');
-  let lastY = window.scrollY, scrollDown = false, captured = false;
-  const TOP_RESTORE = 6;          // px: considerado "de volta ao topo"
-  const START_CAPTURE = 18;       // px: rolagem mínima para baixo que conta como intenção
-  function uiBusy() { const st = window.ClayMenu && window.ClayMenu.state; return st && st !== 'page'; }
-  function onScroll() {
-    const y = window.scrollY;
-    const dy = y - lastY; lastY = y;
-    if (!heroRevealed || uiBusy()) return;
-    if (dy > 0) scrollDown = true; else if (dy < 0) scrollDown = false;
-    if (!captured && scrollDown && y > START_CAPTURE) { captured = true; if (hero) hero.setCapture(true); }
-    else if (captured && !scrollDown && y <= TOP_RESTORE) { captured = false; if (hero) hero.setCapture(false); }
-  }
-  window.addEventListener('scroll', onScroll, { passive: true });
-
-  // legenda e textos acompanham o progresso real da animação de captura
-  let capChars = null, capShown = false, capAnims = [];
-  function showCaption(on) {
-    if (on === capShown || !caption) return;
-    capShown = on;
-    if (!capChars) capChars = splitChars(caption, caption.dataset.text);
-    capAnims.forEach(a => a.cancel());
-    capAnims = on
-      ? capChars.map((c, i) => c.animate([{ opacity: 0, filter: 'blur(12px)', transform: 'translateX(.3em)' }, { opacity: 1, filter: 'blur(0)', transform: 'translateX(0)' }], { duration: 900, delay: i * 32, easing: 'cubic-bezier(.2,.65,.25,1)', fill: 'forwards' }))
-      : capChars.map((c, i) => c.animate([{ opacity: getComputedStyle(c).opacity, filter: 'blur(0)' }, { opacity: 0, filter: 'blur(10px)' }], { duration: 450, delay: i * 10, fill: 'forwards' }));
-  }
-  // Textos do hero (linha vermelha + rótulo, título e frase de apoio): visibilidade ligada ao PROGRESSO DA ROLAGEM.
-  // Ficam 100% visíveis até TEXT_HOLD do percurso do hero e saem aos poucos até TEXT_GONE.
-  // Sem temporizador: se a rolagem parar, eles ficam como estão; ao voltar para cima, reaparecem na mesma medida.
-  const TEXT_HOLD = 0.30, TEXT_GONE = 0.62;
-  const copy = $('#hero-copy'), seeBtn = $('#see-globe');
-  function heroProgress() {
+  // ================= LINHA DO TEMPO DO HERO, PERCORRIDA PELO SCROLL =================
+  // Uma única fonte de verdade: a distância rolada dentro do hero, medida em alturas de tela (u).
+  // Cada etapa é um trecho dessa distância; nada avança sozinho por tempo. Rolar para cima desfaz na mesma medida.
+  //
+  //   u 0.00–0.55  textos do hero visíveis
+  //   u 0.55–1.15  os textos saem da tela (sobem e somem)
+  //   u 1.15–1.45  entra "O mundo inteiro, na palma da mão."
+  //   u 1.45–3.05  a frase permanece legível (≈3 s numa rolagem natural)
+  //   u 3.05–3.35  a frase sai
+  //   u 1.30–2.80  o braço robótico desce do alto e se aproxima do globo
+  //   u 2.40–4.60  a câmera fecha na mão (mão + ~1/3 do antebraço)
+  //   u 2.80–4.80  a mão avança e fecha os dedos em volta da Terra
+  //   u 4.80–5.20  segura
+  //   u 5.20–6.80  leva a Terra para fora do quadro, pelo alto
+  //   u 6.80–7.00  respiro antes da próxima seção
+  const T = {
+    textOut: [0.55, 1.15], capIn: [1.15, 1.45], capOut: [3.05, 3.35],
+    arrive: [1.30, 2.80], close: [2.40, 4.60], grab: [2.80, 4.80], lift: [5.20, 6.80],
+  };
+  const seg = (u, [a, b]) => Math.min(1, Math.max(0, (u - a) / (b - a)));
+  const smooth = k => k * k * (3 - 2 * k);
+  const cue = $('#scroll-cue'), caption = $('#hero-caption'), copy = $('#hero-copy'), seeBtn = $('#see-globe');
+  if (caption && !caption.textContent.trim()) caption.textContent = caption.dataset.text;
+  function heroUnits() {
+    // quantas alturas de tela já foram roladas dentro do hero (0 no topo)
     const r = heroSection.getBoundingClientRect();
-    return Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - innerHeight)));
+    return Math.max(0, -r.top) / Math.max(1, innerHeight);
   }
+  let shownU = -1;
   (function watch() {
     requestAnimationFrame(watch);
-    if (!hero || !heroRevealed) return;
-    const c = hero.capture, p = heroProgress();
-    let k = Math.min(1, Math.max(0, (p - TEXT_HOLD) / (TEXT_GONE - TEXT_HOLD)));
-    k = k * k * (3 - 2 * k);
+    if (!heroRevealed) return;
+    const u = heroUnits();
+    if (Math.abs(u - shownU) < 1e-4) return;   // nada mudou: não reescreve estilos
+    shownU = u;
+    // --- cena 3D: captura (0 → 2) e câmera fechada (0 → 1), ambas função direta do scroll ---
+    const cap = 0.3 * seg(u, T.arrive) + 0.7 * seg(u, T.grab) + seg(u, T.lift);
+    if (hero) hero.setScene(cap, smooth(seg(u, T.close)));
+    // --- textos do hero: sobem e somem até sair da tela ---
+    const kt = smooth(seg(u, T.textOut));
     if (copy) {
-      copy.style.opacity = (1 - k).toFixed(3);
-      copy.style.transform = `translate3d(0, ${(-26 * k).toFixed(1)}px, 0)`;
-      copy.style.filter = k > 0.001 ? `blur(${(k * 6).toFixed(2)}px)` : '';
+      copy.style.opacity = (1 - smooth(Math.min(1, kt / 0.75))).toFixed(3);
+      copy.style.transform = `translate3d(0, ${(-kt * 46).toFixed(2)}vh, 0)`;
+      copy.style.filter = kt > 0.001 ? `blur(${(kt * 5).toFixed(2)}px)` : '';
+      copy.style.visibility = kt >= 1 ? 'hidden' : '';
     }
-    // o botão "Ver globo" só faz sentido na composição inicial (antes da captura)
-    if (seeBtn) seeBtn.classList.toggle('is-away', c > 0.02 || p > 0.04);
-    if (cue) cue.style.opacity = c > 0.02 ? 0 : 1;
-    showCaption(c > 0.85 && c < 1.45);
+    // --- frase do meio: só depois que os textos saíram por completo ---
+    if (caption) {
+      const ci = smooth(seg(u, T.capIn)), co = smooth(seg(u, T.capOut));
+      const a = ci * (1 - co);
+      caption.style.opacity = a.toFixed(3);
+      caption.style.setProperty('--cy', `${((1 - ci) * 18 - co * 18).toFixed(2)}px`);
+      caption.style.filter = a < 0.999 && a > 0 ? `blur(${((1 - a) * 8).toFixed(2)}px)` : '';
+      caption.style.visibility = a <= 0.001 ? 'hidden' : 'visible';
+    }
+    // "Ver globo" só na composição inicial
+    if (seeBtn) seeBtn.classList.toggle('is-away', u > 0.12);
+    if (cue) cue.style.opacity = u > 0.05 ? 0 : 1;
   })();
 })();

@@ -1,6 +1,6 @@
 # CLAYSP — Portfólio
 
-Abertura cinematográfica da marca CLAYSP e hero 3D: a Terra (imagens reais da NASA) flutua no espaço; ao rolar a página, um braço robótico preto surge do alto, agarra o planeta e o leva para fora da tela. O botão **Ver globo** leva a câmera até uma órbita baixa sobre a Terra.
+Abertura cinematográfica da marca CLAYSP e hero 3D: a Terra (imagens reais da NASA) flutua no espaço; a rolagem da página percorre a cena quadro a quadro — um braço robótico preto surge do alto, a câmera fecha na mão, ela agarra o planeta e o leva para fora da tela. Rolar para cima desfaz tudo na mesma medida. O botão **Ver globo** leva a câmera até uma órbita baixa sobre a Terra.
 Feito em HTML, CSS e JavaScript puro (WebGL2), sem bibliotecas externas.
 
 ## Como o repositório está organizado
@@ -27,7 +27,7 @@ Para ver localmente: abra `index.html` (raiz) com dois cliques. Use `?semintro` 
 | Textos da abertura ("Seja bem-vindo :)", "Criado por") | atributos `data-text` |
 
 ## Código
-- `fonte/js/intro.js` — abertura (boas-vindas → Criado por → C + batida → CLAYSP letra por letra → reflexos → pulsação → queima) e a captura disparada pela rolagem para baixo.
+- `fonte/js/intro.js` — abertura (boas-vindas → Criado por → C + batida → CLAYSP letra por letra → reflexos → pulsação → queima) e a **linha do tempo do hero** (objeto `T`): cada etapa é um trecho da rolagem, medido em alturas de tela.
 - `fonte/js/burn.js` — transição de queima que revela o hero.
 - `fonte/js/hero.js` — cena 3D: Terra, braço robótico, contato dos dedos com a esfera, câmera em órbita baixa. A sensibilidade do arraste fica em `DRAG_SENSITIVITY`.
 - `fonte/js/menu.js` — menu (bolinha na seção atual) e a experiência "Ver globo", em estados separados.

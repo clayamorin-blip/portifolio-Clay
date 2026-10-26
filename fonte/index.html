@@ -35,16 +35,19 @@
 
   <!-- ===================== CABEÇALHO ===================== -->
   <header class="site-header">
-    <button class="mark" id="menu-open" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="menu">
+    <a class="mark" href="#topo" id="home-link" aria-label="CLAYSP: voltar ao início">
       <img alt="" data-asset="symbol">
-      <span>CLAYSP</span>
-      <i class="mark-hint" aria-hidden="true">Menu</i>
-    </button>
-    <nav>
-      <a href="#projetos">Projetos</a>
-      <a href="#sobre">Sobre</a>
-      <a href="#contato">Contato</a>
-    </nav>
+    </a>
+    <div class="header-right">
+      <nav aria-label="Atalhos">
+        <a href="#projetos">Projetos</a>
+        <a href="#sobre">Sobre</a>
+        <a href="#contato">Contato</a>
+      </nav>
+      <button class="menu-btn" id="menu-open" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="menu">
+        <span class="menu-btn-label">Menu</span><i aria-hidden="true"></i>
+      </button>
+    </div>
   </header>
 
   <main>

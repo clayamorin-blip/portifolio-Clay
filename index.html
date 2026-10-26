@@ -134,12 +134,18 @@ img { display: block; max-width: 100%; }
   padding: clamp(16px, 2.6vw, 30px) var(--gutter);
   mix-blend-mode: difference;
 }
-.site-header .mark { display: flex; align-items: center; gap: 12px; background: none; border: 0; padding: 6px 4px; margin: -6px -4px; color: inherit; cursor: pointer; border-radius: 8px; }
-.site-header .mark:focus-visible { outline: 1px solid currentColor; outline-offset: 4px; }
-.mark-hint { font: 500 9px/1 var(--ui); font-style: normal; letter-spacing: .32em; text-transform: uppercase; opacity: 0; transform: translateX(-6px); transition: opacity .35s, transform .35s; }
-.site-header .mark:hover .mark-hint, .site-header .mark:focus-visible .mark-hint { opacity: .7; transform: none; }
-.site-header .mark img { height: 30px; width: auto; }
-.site-header .mark span { font: 600 11px/1 var(--ui); letter-spacing: .42em; }
+/* logotipo: só o símbolo C, como link para o início (área de toque de 44 px) */
+.site-header .mark { display: grid; place-items: center; width: 44px; height: 44px; margin: -7px; border-radius: 50%; color: inherit; }
+.site-header .mark img { height: 30px; width: auto; transition: transform .4s cubic-bezier(.2,.7,.2,1); }
+.site-header .mark:hover img { transform: scale(1.06); }
+.site-header .mark:focus-visible { outline: 1px solid currentColor; outline-offset: 2px; }
+.header-right { display: flex; align-items: center; gap: clamp(18px, 2.8vw, 40px); }
+.menu-btn { display: inline-flex; align-items: center; gap: 10px; height: 44px; padding: 0 2px; background: none; border: 0; color: inherit; cursor: pointer; font: 500 11px/1 var(--ui); letter-spacing: .26em; text-transform: uppercase; }
+.menu-btn i { position: relative; width: 22px; height: 7px; }
+.menu-btn i::before, .menu-btn i::after { content: ''; position: absolute; right: 0; height: 1px; background: currentColor; transition: width .35s cubic-bezier(.2,.7,.2,1); }
+.menu-btn i::before { top: 0; width: 22px; } .menu-btn i::after { bottom: 0; width: 14px; }
+.menu-btn:hover i::after { width: 22px; }
+.menu-btn:focus-visible { outline: 1px solid currentColor; outline-offset: 4px; }
 .site-header nav { display: flex; gap: clamp(16px, 2.5vw, 36px); }
 .site-header nav a { font: 500 11px/1 var(--ui); letter-spacing: .26em; text-transform: uppercase; opacity: .75; transition: opacity .3s; position: relative; }
 .site-header nav a::after { content: ''; position: absolute; left: 0; right: 0; bottom: -6px; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: right; transition: transform .4s cubic-bezier(.2,.7,.2,1); }
@@ -147,7 +153,8 @@ img { display: block; max-width: 100%; }
 .site-header nav a:hover::after { transform: scaleX(1); transform-origin: left; }
 
 /* ============ HERO ============ */
-.hero { position: relative; height: 230vh; background: #000; }
+/* o hero é longo: a sequência inteira é percorrida pelo scroll (ver a linha do tempo em js/intro.js) */
+.hero { position: relative; height: 800vh; height: calc(700vh + 100lvh); background: #000; }
 .hero-sticky { position: sticky; top: 0; height: 100vh; height: 100lvh; min-height: 520px; overflow: hidden; }
 #hero-canvas { touch-action: pan-y; }
 .hero.no-webgl { height: auto; }
@@ -158,7 +165,8 @@ img { display: block; max-width: 100%; }
 }
 .hero-sticky::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(120% 90% at 50% 45%, transparent 55%, rgba(0,0,0,.65) 100%); }
 .hero-caption {
-  position: absolute; left: var(--gutter); top: 50%; transform: translateY(-50%);
+  position: absolute; left: var(--gutter); top: 50%; transform: translate3d(0, calc(-50% + var(--cy, 0px)), 0);
+  opacity: 0; visibility: hidden; will-change: opacity, transform;
   max-width: min(30vw, 420px); text-align: left; z-index: 2; pointer-events: none;
   font-family: var(--display); font-weight: 300; font-style: italic;
   font-size: clamp(26px, 3.6vw, 52px); line-height: 1.05; color: #f1f2f5;
@@ -259,7 +267,7 @@ body.is-focus .hero-bottom { opacity: 0; transform: translateY(14px); pointer-ev
   .site-header nav { display: none; }
   .orbit-btn { width: 132px; }
   .ui-close { top: 14px; right: 14px; }
-  .hero-caption { left: 50%; top: calc(clamp(64px, 11vh, 96px) + env(safe-area-inset-top, 0px)); bottom: auto; transform: translateX(-50%); max-width: 88vw; width: max-content; text-align: center; }
+  .hero-caption { left: 50%; top: auto; bottom: calc(clamp(56px, 14vh, 120px) + env(safe-area-inset-bottom, 0px)); transform: translate3d(-50%, var(--cy, 0px), 0); max-width: 88vw; width: max-content; text-align: center; }
   .about { grid-template-columns: 1fr; }
   .scroll-cue { display: none; }
   .hero-bottom { flex-direction: column-reverse; align-items: flex-start; gap: 18px; }
@@ -408,16 +416,19 @@ body.is-focus #hero-canvas { cursor: grab; }
 
   <!-- ===================== CABEÇALHO ===================== -->
   <header class="site-header">
-    <button class="mark" id="menu-open" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="menu">
+    <a class="mark" href="#topo" id="home-link" aria-label="CLAYSP: voltar ao início">
       <img alt="" data-asset="symbol">
-      <span>CLAYSP</span>
-      <i class="mark-hint" aria-hidden="true">Menu</i>
-    </button>
-    <nav>
-      <a href="#projetos">Projetos</a>
-      <a href="#sobre">Sobre</a>
-      <a href="#contato">Contato</a>
-    </nav>
+    </a>
+    <div class="header-right">
+      <nav aria-label="Atalhos">
+        <a href="#projetos">Projetos</a>
+        <a href="#sobre">Sobre</a>
+        <a href="#contato">Contato</a>
+      </nav>
+      <button class="menu-btn" id="menu-open" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="menu">
+        <span class="menu-btn-label">Menu</span><i aria-hidden="true"></i>
+      </button>
+    </div>
   </header>
 
   <main>
@@ -1162,7 +1173,7 @@ precision mediump float; out vec4 frag; void main(){ frag = vec4(1.0); }`;
     const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
     let earthRot = +(qs.get('er') || -0.6), earthVel = 0.07, cloudOff = 0, last = performance.now(), time = 0, raf = 0;
     // captura (0 = mão em pose de cobiça · 1 = globo agarrado · 2 = levado para fora da tela)
-    let cap = 0, capTarget = 0;
+    let cap = 0, capTarget = 0, close = 0, closeTarget = 0;   // definidos pelo scroll (setScene)
     // experiência "Ver globo"
     let focusOn = false, focusK = 0, dragging = false, lastX = 0, lastY = 0, dragDist = 0, firstDragDone = false, onFirstDrag = null, dragVel = 0;
 
@@ -1242,7 +1253,8 @@ precision mediump float; out vec4 frag; void main(){ frag = vec4(1.0); }`;
       const globePos = [GLOBE_POS[0], GLOBE_POS[1] + rise, GLOBE_POS[2]];
       pose.pos = V.add(pose.pos, [0, rise, 0]);
       // chegada: desce de fora do quadro, já com a intenção de agarrar
-      pose.pos = V.add(pose.pos, [(1 - ease(arrive)) * 0.6, (1 - ease(arrive)) * 4.6, 0]);
+      const inA = 1 - Math.pow(1 - arrive, 2.2);   // entra com desaceleração: aparece logo no começo do trecho
+      pose.pos = V.add(pose.pos, [(1 - inA) * 0.5, (1 - inA) * 3.4, 0]);
       if (cap <= 0.002) return { pose, globePos, grip: 0, armOn: false };   // braço fora da cena: nada a calcular
       solveArmContact(rig, pose, globePos, GLOBE_R, grab);
       // cobiça: mantém uma folga visível entre a ponta dos dedos e a Terra (sem tocar)
@@ -1288,8 +1300,14 @@ precision mediump float; out vec4 frag; void main(){ frag = vec4(1.0); }`;
       const ty0 = asp < 0.8 ? 0.30 : 0.36;   // sem a mão no início: a Terra sobe um pouco, longe do título
       const tx0 = asp < 0.8 ? 0.32 : 0.12;
       const az = +(qs.get('az') || 0);
-      const tgt0 = [tx0, ty0, 0];
-      const eye0 = [tx0 + Math.sin(az) * far, ty0 + Math.sin(0.07) * far, Math.cos(az) * Math.cos(0.07) * far];
+      // enquadramento fechado da captura: mão + ~1/3 do antebraço, com a Terra embaixo (ajustado à proporção da tela)
+      const ce = close * close * (3 - 2 * close);
+      const closeH = 2.95, closeW = asp < 0.8 ? 2.45 : 2.45;
+      const distC = Math.max((closeH / 2) / tn, (closeW / 2) / (tn * asp)) * 1.02;
+      const tgtC = asp < 0.8 ? [0.44, -0.62, 0] : [0.30, 0.42, 0];   // em pé: sobe a cena para cortar o antebraço
+      const tgt0 = V.lerp([tx0, ty0, 0], tgtC, ce);
+      const distS = mix(far, distC, ce), elS = mix(0.07, 0.16, ce);
+      const eye0 = [tgt0[0] + Math.sin(az) * distS, tgt0[1] + Math.sin(elS) * distS, Math.cos(az) * Math.cos(elS) * distS];
       // destino: perto da superfície (a escala vem da câmera, não do tamanho dos modelos)
       const ORBIT = asp < 0.8 ? ORBIT_TALL : ORBIT_WIDE;
       const eye1 = V.add(GLOBE_POS, V.mul(ORBIT.up, GLOBE_R * (1 + ORBIT.alt)));
@@ -1307,10 +1325,10 @@ precision mediump float; out vec4 frag; void main(){ frag = vec4(1.0); }`;
     }
 
     // ---- arraste do globo (somente horizontal, somente no modo "Ver globo") ----
-    // Sensibilidade: radianos de rotação por pixel arrastado. Antes: 0.0055 → agora 25% disso (planeta pesado, imenso).
-    const DRAG_SENSITIVITY = 0.0055 * 0.25;
+    // Sensibilidade: radianos de rotação por pixel arrastado (valor central: ajuste aqui).
+    const DRAG_SENSITIVITY = 0.0055 * 0.25 * 0.45;   // 45% da versão anterior (≈0,036° por pixel)
     const DRAG_SMOOTH = 7.0;      // suavização do giro (maior = responde mais rápido)
-    const DRAG_INERTIA = 0.35;    // quanto do impulso continua depois de soltar (0 = nenhum)
+    const DRAG_INERTIA = 0.16;    // quanto do impulso continua depois de soltar (0 = nenhum)
     let rotTarget = null;
     function onDown(e) {
       if (!focusOn || focusK < 0.85) return;
@@ -1344,11 +1362,15 @@ precision mediump float; out vec4 frag; void main(){ frag = vec4(1.0); }`;
       if (!started && !qs.has('cap')) { if (warm >= 2) return; warm++; }
       if (started) intro = Math.min(1, (now - introT0) / 2400);
       if (qs.has('cap')) { cap = capTarget = +qs.get('cap'); intro = 1; }
+      if (qs.has('close')) { close = closeTarget = +qs.get('close'); }
       if (qs.has('fk')) { focusK = +qs.get('fk'); }
       // captura: duração controlada, independente da velocidade da rolagem
-      const speed = reducedMotion ? 3 : 0.5;
-      if (cap < capTarget) cap = Math.min(capTarget, cap + realDt * speed);
-      else if (cap > capTarget) cap = Math.max(capTarget, cap - realDt * speed * 1.2);
+      // a cena segue o scroll; só uma suavização curta (~0,1 s) apara a irregularidade da roda do mouse,
+      // sem deixar nada avançar por conta própria
+      const follow = reducedMotion ? 1 : 1 - Math.exp(-realDt * 16);
+      cap += (capTarget - cap) * follow; close += (closeTarget - close) * follow;
+      if (Math.abs(capTarget - cap) < 1e-4) cap = capTarget;
+      if (Math.abs(closeTarget - close) < 1e-4) close = closeTarget;
       // câmera do "Ver globo": ~2,6 s para entrar ou sair
       const fT = focusOn ? 1 : 0, fs = reducedMotion ? 6 : 1 / 3.2;
       if (focusK < fT) focusK = Math.min(fT, focusK + realDt * fs); else if (focusK > fT) focusK = Math.max(fT, focusK - realDt * fs);
@@ -1473,7 +1495,8 @@ precision mediump float; out vec4 frag; void main(){ frag = vec4(1.0); }`;
       setVisible(v) { visible = v; },
       setFade(v) { fade = v; },
       // captura: 0 = cobiça, 2 = globo levado para fora da tela
-      setCapture(on) { capTarget = on ? 2 : 0; },
+      // progresso da cena vindo do scroll: cap 0→2 (chegada, captura, saída) e câmera fechada 0→1
+      setScene(c, k) { capTarget = clamp(c, 0, 2); closeTarget = clamp(k, 0, 1); },
       get capture() { return cap; },
       setFocus(on, cb) {
         focusOn = !!on; onFirstDrag = cb || null;
@@ -2030,60 +2053,64 @@ void main(){
     new IntersectionObserver(([e]) => { if (hero) hero.setVisible(e.isIntersecting); }, { threshold: 0 }).observe(heroSection);
   }
 
-  // ---------- captura do globo: depende SÓ da rolagem para baixo (scrollDown) ----------
-  //  • rolar para baixo a partir do topo  → scrollDown = true → a mão agarra a Terra e a leva para fora da tela (uma vez)
-  //  • voltar ao topo da página (rolando para cima) → a cena é restaurada: a Terra volta e a mão retoma a pose de cobiça
-  //  • menu, "Ver globo", X e arraste do globo não mexem nesse estado
-  const bottom = $('.hero-bottom'), cue = $('#scroll-cue'), caption = $('#hero-caption');
-  let lastY = window.scrollY, scrollDown = false, captured = false;
-  const TOP_RESTORE = 6;          // px: considerado "de volta ao topo"
-  const START_CAPTURE = 18;       // px: rolagem mínima para baixo que conta como intenção
-  function uiBusy() { const st = window.ClayMenu && window.ClayMenu.state; return st && st !== 'page'; }
-  function onScroll() {
-    const y = window.scrollY;
-    const dy = y - lastY; lastY = y;
-    if (!heroRevealed || uiBusy()) return;
-    if (dy > 0) scrollDown = true; else if (dy < 0) scrollDown = false;
-    if (!captured && scrollDown && y > START_CAPTURE) { captured = true; if (hero) hero.setCapture(true); }
-    else if (captured && !scrollDown && y <= TOP_RESTORE) { captured = false; if (hero) hero.setCapture(false); }
-  }
-  window.addEventListener('scroll', onScroll, { passive: true });
-
-  // legenda e textos acompanham o progresso real da animação de captura
-  let capChars = null, capShown = false, capAnims = [];
-  function showCaption(on) {
-    if (on === capShown || !caption) return;
-    capShown = on;
-    if (!capChars) capChars = splitChars(caption, caption.dataset.text);
-    capAnims.forEach(a => a.cancel());
-    capAnims = on
-      ? capChars.map((c, i) => c.animate([{ opacity: 0, filter: 'blur(12px)', transform: 'translateX(.3em)' }, { opacity: 1, filter: 'blur(0)', transform: 'translateX(0)' }], { duration: 900, delay: i * 32, easing: 'cubic-bezier(.2,.65,.25,1)', fill: 'forwards' }))
-      : capChars.map((c, i) => c.animate([{ opacity: getComputedStyle(c).opacity, filter: 'blur(0)' }, { opacity: 0, filter: 'blur(10px)' }], { duration: 450, delay: i * 10, fill: 'forwards' }));
-  }
-  // Textos do hero (linha vermelha + rótulo, título e frase de apoio): visibilidade ligada ao PROGRESSO DA ROLAGEM.
-  // Ficam 100% visíveis até TEXT_HOLD do percurso do hero e saem aos poucos até TEXT_GONE.
-  // Sem temporizador: se a rolagem parar, eles ficam como estão; ao voltar para cima, reaparecem na mesma medida.
-  const TEXT_HOLD = 0.30, TEXT_GONE = 0.62;
-  const copy = $('#hero-copy'), seeBtn = $('#see-globe');
-  function heroProgress() {
+  // ================= LINHA DO TEMPO DO HERO, PERCORRIDA PELO SCROLL =================
+  // Uma única fonte de verdade: a distância rolada dentro do hero, medida em alturas de tela (u).
+  // Cada etapa é um trecho dessa distância; nada avança sozinho por tempo. Rolar para cima desfaz na mesma medida.
+  //
+  //   u 0.00–0.55  textos do hero visíveis
+  //   u 0.55–1.15  os textos saem da tela (sobem e somem)
+  //   u 1.15–1.45  entra "O mundo inteiro, na palma da mão."
+  //   u 1.45–3.05  a frase permanece legível (≈3 s numa rolagem natural)
+  //   u 3.05–3.35  a frase sai
+  //   u 1.30–2.80  o braço robótico desce do alto e se aproxima do globo
+  //   u 2.40–4.60  a câmera fecha na mão (mão + ~1/3 do antebraço)
+  //   u 2.80–4.80  a mão avança e fecha os dedos em volta da Terra
+  //   u 4.80–5.20  segura
+  //   u 5.20–6.80  leva a Terra para fora do quadro, pelo alto
+  //   u 6.80–7.00  respiro antes da próxima seção
+  const T = {
+    textOut: [0.55, 1.15], capIn: [1.15, 1.45], capOut: [3.05, 3.35],
+    arrive: [1.30, 2.80], close: [2.40, 4.60], grab: [2.80, 4.80], lift: [5.20, 6.80],
+  };
+  const seg = (u, [a, b]) => Math.min(1, Math.max(0, (u - a) / (b - a)));
+  const smooth = k => k * k * (3 - 2 * k);
+  const cue = $('#scroll-cue'), caption = $('#hero-caption'), copy = $('#hero-copy'), seeBtn = $('#see-globe');
+  if (caption && !caption.textContent.trim()) caption.textContent = caption.dataset.text;
+  function heroUnits() {
+    // quantas alturas de tela já foram roladas dentro do hero (0 no topo)
     const r = heroSection.getBoundingClientRect();
-    return Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - innerHeight)));
+    return Math.max(0, -r.top) / Math.max(1, innerHeight);
   }
+  let shownU = -1;
   (function watch() {
     requestAnimationFrame(watch);
-    if (!hero || !heroRevealed) return;
-    const c = hero.capture, p = heroProgress();
-    let k = Math.min(1, Math.max(0, (p - TEXT_HOLD) / (TEXT_GONE - TEXT_HOLD)));
-    k = k * k * (3 - 2 * k);
+    if (!heroRevealed) return;
+    const u = heroUnits();
+    if (Math.abs(u - shownU) < 1e-4) return;   // nada mudou: não reescreve estilos
+    shownU = u;
+    // --- cena 3D: captura (0 → 2) e câmera fechada (0 → 1), ambas função direta do scroll ---
+    const cap = 0.3 * seg(u, T.arrive) + 0.7 * seg(u, T.grab) + seg(u, T.lift);
+    if (hero) hero.setScene(cap, smooth(seg(u, T.close)));
+    // --- textos do hero: sobem e somem até sair da tela ---
+    const kt = smooth(seg(u, T.textOut));
     if (copy) {
-      copy.style.opacity = (1 - k).toFixed(3);
-      copy.style.transform = `translate3d(0, ${(-26 * k).toFixed(1)}px, 0)`;
-      copy.style.filter = k > 0.001 ? `blur(${(k * 6).toFixed(2)}px)` : '';
+      copy.style.opacity = (1 - smooth(Math.min(1, kt / 0.75))).toFixed(3);
+      copy.style.transform = `translate3d(0, ${(-kt * 46).toFixed(2)}vh, 0)`;
+      copy.style.filter = kt > 0.001 ? `blur(${(kt * 5).toFixed(2)}px)` : '';
+      copy.style.visibility = kt >= 1 ? 'hidden' : '';
     }
-    // o botão "Ver globo" só faz sentido na composição inicial (antes da captura)
-    if (seeBtn) seeBtn.classList.toggle('is-away', c > 0.02 || p > 0.04);
-    if (cue) cue.style.opacity = c > 0.02 ? 0 : 1;
-    showCaption(c > 0.85 && c < 1.45);
+    // --- frase do meio: só depois que os textos saíram por completo ---
+    if (caption) {
+      const ci = smooth(seg(u, T.capIn)), co = smooth(seg(u, T.capOut));
+      const a = ci * (1 - co);
+      caption.style.opacity = a.toFixed(3);
+      caption.style.setProperty('--cy', `${((1 - ci) * 18 - co * 18).toFixed(2)}px`);
+      caption.style.filter = a < 0.999 && a > 0 ? `blur(${((1 - a) * 8).toFixed(2)}px)` : '';
+      caption.style.visibility = a <= 0.001 ? 'hidden' : 'visible';
+    }
+    // "Ver globo" só na composição inicial
+    if (seeBtn) seeBtn.classList.toggle('is-away', u > 0.12);
+    if (cue) cue.style.opacity = u > 0.05 ? 0 : 1;
   })();
 })();
 
@@ -2232,6 +2259,13 @@ void main(){
 
   // ---------- eventos ----------
   openBtn.addEventListener('click', openMenu);
+  // logotipo: volta ao início rolando suavemente (a sequência do hero se desfaz no caminho)
+  const home = document.getElementById('home-link');
+  if (home) home.addEventListener('click', e => {
+    if (state !== 'page') return;
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+  });
   if (seeBtn) seeBtn.addEventListener('click', enterGlobe);
   closeBtn.addEventListener('click', () => {
     if (state === 'menu') closeMenu();

@@ -603,7 +603,7 @@ precision mediump float; out vec4 frag; void main(){ frag = vec4(1.0); }`;
     const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
     let earthRot = +(qs.get('er') || -0.6), earthVel = 0.07, cloudOff = 0, last = performance.now(), time = 0, raf = 0;
     // captura (0 = mão em pose de cobiça · 1 = globo agarrado · 2 = levado para fora da tela)
-    let cap = 0, capTarget = 0;
+    let cap = 0, capTarget = 0, close = 0, closeTarget = 0;   // definidos pelo scroll (setScene)
     // experiência "Ver globo"
     let focusOn = false, focusK = 0, dragging = false, lastX = 0, lastY = 0, dragDist = 0, firstDragDone = false, onFirstDrag = null, dragVel = 0;
 
@@ -683,7 +683,8 @@ precision mediump float; out vec4 frag; void main(){ frag = vec4(1.0); }`;
       const globePos = [GLOBE_POS[0], GLOBE_POS[1] + rise, GLOBE_POS[2]];
       pose.pos = V.add(pose.pos, [0, rise, 0]);
       // chegada: desce de fora do quadro, já com a intenção de agarrar
-      pose.pos = V.add(pose.pos, [(1 - ease(arrive)) * 0.6, (1 - ease(arrive)) * 4.6, 0]);
+      const inA = 1 - Math.pow(1 - arrive, 2.2);   // entra com desaceleração: aparece logo no começo do trecho
+      pose.pos = V.add(pose.pos, [(1 - inA) * 0.5, (1 - inA) * 3.4, 0]);
       if (cap <= 0.002) return { pose, globePos, grip: 0, armOn: false };   // braço fora da cena: nada a calcular
       solveArmContact(rig, pose, globePos, GLOBE_R, grab);
       // cobiça: mantém uma folga visível entre a ponta dos dedos e a Terra (sem tocar)
@@ -729,8 +730,14 @@ precision mediump float; out vec4 frag; void main(){ frag = vec4(1.0); }`;
       const ty0 = asp < 0.8 ? 0.30 : 0.36;   // sem a mão no início: a Terra sobe um pouco, longe do título
       const tx0 = asp < 0.8 ? 0.32 : 0.12;
       const az = +(qs.get('az') || 0);
-      const tgt0 = [tx0, ty0, 0];
-      const eye0 = [tx0 + Math.sin(az) * far, ty0 + Math.sin(0.07) * far, Math.cos(az) * Math.cos(0.07) * far];
+      // enquadramento fechado da captura: mão + ~1/3 do antebraço, com a Terra embaixo (ajustado à proporção da tela)
+      const ce = close * close * (3 - 2 * close);
+      const closeH = 2.95, closeW = asp < 0.8 ? 2.45 : 2.45;
+      const distC = Math.max((closeH / 2) / tn, (closeW / 2) / (tn * asp)) * 1.02;
+      const tgtC = asp < 0.8 ? [0.44, -0.62, 0] : [0.30, 0.42, 0];   // em pé: sobe a cena para cortar o antebraço
+      const tgt0 = V.lerp([tx0, ty0, 0], tgtC, ce);
+      const distS = mix(far, distC, ce), elS = mix(0.07, 0.16, ce);
+      const eye0 = [tgt0[0] + Math.sin(az) * distS, tgt0[1] + Math.sin(elS) * distS, Math.cos(az) * Math.cos(elS) * distS];
       // destino: perto da superfície (a escala vem da câmera, não do tamanho dos modelos)
       const ORBIT = asp < 0.8 ? ORBIT_TALL : ORBIT_WIDE;
       const eye1 = V.add(GLOBE_POS, V.mul(ORBIT.up, GLOBE_R * (1 + ORBIT.alt)));
@@ -748,10 +755,10 @@ precision mediump float; out vec4 frag; void main(){ frag = vec4(1.0); }`;
     }
 
     // ---- arraste do globo (somente horizontal, somente no modo "Ver globo") ----
-    // Sensibilidade: radianos de rotação por pixel arrastado. Antes: 0.0055 → agora 25% disso (planeta pesado, imenso).
-    const DRAG_SENSITIVITY = 0.0055 * 0.25;
+    // Sensibilidade: radianos de rotação por pixel arrastado (valor central: ajuste aqui).
+    const DRAG_SENSITIVITY = 0.0055 * 0.25 * 0.45;   // 45% da versão anterior (≈0,036° por pixel)
     const DRAG_SMOOTH = 7.0;      // suavização do giro (maior = responde mais rápido)
-    const DRAG_INERTIA = 0.35;    // quanto do impulso continua depois de soltar (0 = nenhum)
+    const DRAG_INERTIA = 0.16;    // quanto do impulso continua depois de soltar (0 = nenhum)
     let rotTarget = null;
     function onDown(e) {
       if (!focusOn || focusK < 0.85) return;
@@ -785,11 +792,15 @@ precision mediump float; out vec4 frag; void main(){ frag = vec4(1.0); }`;
       if (!started && !qs.has('cap')) { if (warm >= 2) return; warm++; }
       if (started) intro = Math.min(1, (now - introT0) / 2400);
       if (qs.has('cap')) { cap = capTarget = +qs.get('cap'); intro = 1; }
+      if (qs.has('close')) { close = closeTarget = +qs.get('close'); }
       if (qs.has('fk')) { focusK = +qs.get('fk'); }
       // captura: duração controlada, independente da velocidade da rolagem
-      const speed = reducedMotion ? 3 : 0.5;
-      if (cap < capTarget) cap = Math.min(capTarget, cap + realDt * speed);
-      else if (cap > capTarget) cap = Math.max(capTarget, cap - realDt * speed * 1.2);
+      // a cena segue o scroll; só uma suavização curta (~0,1 s) apara a irregularidade da roda do mouse,
+      // sem deixar nada avançar por conta própria
+      const follow = reducedMotion ? 1 : 1 - Math.exp(-realDt * 16);
+      cap += (capTarget - cap) * follow; close += (closeTarget - close) * follow;
+      if (Math.abs(capTarget - cap) < 1e-4) cap = capTarget;
+      if (Math.abs(closeTarget - close) < 1e-4) close = closeTarget;
       // câmera do "Ver globo": ~2,6 s para entrar ou sair
       const fT = focusOn ? 1 : 0, fs = reducedMotion ? 6 : 1 / 3.2;
       if (focusK < fT) focusK = Math.min(fT, focusK + realDt * fs); else if (focusK > fT) focusK = Math.max(fT, focusK - realDt * fs);
@@ -914,7 +925,8 @@ precision mediump float; out vec4 frag; void main(){ frag = vec4(1.0); }`;
       setVisible(v) { visible = v; },
       setFade(v) { fade = v; },
       // captura: 0 = cobiça, 2 = globo levado para fora da tela
-      setCapture(on) { capTarget = on ? 2 : 0; },
+      // progresso da cena vindo do scroll: cap 0→2 (chegada, captura, saída) e câmera fechada 0→1
+      setScene(c, k) { capTarget = clamp(c, 0, 2); closeTarget = clamp(k, 0, 1); },
       get capture() { return cap; },
       setFocus(on, cb) {
         focusOn = !!on; onFirstDrag = cb || null;
